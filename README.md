@@ -24,12 +24,7 @@ To use this application, simply type in the name and amount of each transaction 
 
 ## Screenshots
 
-![Screenshot-Homepage](./public/images/screenshots/homepage.png)
-![Screenshot-Comments](./public/images/screenshots/comments.png)
-![Screenshot-Dashboard](./public/images/screenshots/dashboard.png)
-![Screenshot-Create](./public/images/screenshots/create.png)
-![Screenshot-Update](./public/images/screenshots/update.png)
-![Screenshot-Login](./public/images/screenshots/login.png)
+![Screenshot-Homepage](./public/assets/images/screenshot/home.png)
 
 ## License
 
