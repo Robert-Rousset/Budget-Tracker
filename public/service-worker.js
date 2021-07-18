@@ -1,32 +1,28 @@
-// Uncomment the lines below
-
-const CACHE_NAME = "static-cache-v2";
+const CACHE_NAME = "static-cache-v1";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/style.css",
-  "/index.js",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  "/service-worker.js",
+  "/assets/js/register-service-worker.js",
+  "/assets/css/styles.css",
+  "/assets/js/index.js",
+  "/assets/js/db.js",
+  "/assets/images/icons/icon-192x192.png",
+  "/assets/images/icons/icon-512x512.png",
 ];
 
-// install
 self.addEventListener("install", function (evt) {
-  // pre cache image data
   evt.waitUntil(
     caches.open(DATA_CACHE_NAME).then((cache) => cache.add("/api/transaction"))
   );
 
-  // pre cache all static assets
   evt.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
   );
 
-  // tell the browser to activate this service worker immediately once it
-  // has finished installing
   self.skipWaiting();
 });
 
@@ -63,6 +59,7 @@ self.addEventListener("fetch", function (evt) {
             return response;
           })
           .catch((err) => {
+            saveRecord(transaction);
             return cache.match(evt.request);
           });
       })
