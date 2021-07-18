@@ -1,5 +1,5 @@
-const CACHE_NAME = "static-cache-v1";
-const DATA_CACHE_NAME = "data-cache-v1";
+const STATIC_CACHE = "static-cache-v1";
+const RUNTIME_CACHE = "runtime-cache";
 
 const FILES_TO_CACHE = [
   "/",
@@ -14,62 +14,68 @@ const FILES_TO_CACHE = [
   "/assets/images/icons/icon-512x512.png",
 ];
 
-self.addEventListener("install", function (evt) {
-  evt.waitUntil(
-    caches.open(DATA_CACHE_NAME).then((cache) => cache.add("/api/transaction"))
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => cache.addAll(FILES_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
-
-  evt.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
-  );
-
-  self.skipWaiting();
 });
 
-self.addEventListener("activate", function (evt) {
-  evt.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
-            console.log("Removing old cache data", key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+self.addEventListener("activate", (event) => {
+  const currentCaches = [STATIC_CACHE, RUNTIME_CACHE];
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return cacheNames.filter(
+          (cacheName) => !currentCaches.includes(cacheName)
+        );
+      })
+      .then((cachesToDelete) => {
+        return Promise.all(
+          cachesToDelete.map((cacheToDelete) => {
+            return caches.delete(cacheToDelete);
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
-
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", function (evt) {
-  // code to handle requests goes here
-
-  if (evt.request.url.includes("/api/")) {
-    console.log("[Service Worker] Fetch (data)", evt.request.url);
-    evt.respondWith(
-      caches.open(DATA_CACHE_NAME).then((cache) => {
-        return fetch(evt.request)
+self.addEventListener("fetch", (event) => {
+  if (
+    event.request.method !== "GET" ||
+    !event.request.url.startsWith(self.location.origin)
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  if (event.request.url.includes("/api/transactions")) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return fetch(event.request)
           .then((response) => {
-            if (response.status === 200) {
-              cache.put(evt.request.url, response.clone());
-            }
-
+            cache.put(event.request, response.clone());
             return response;
           })
-          .catch((err) => {
-            saveRecord(transaction);
-            return cache.match(evt.request);
-          });
+          .catch(() => caches.match(event.request));
       })
     );
     return;
   }
-  evt.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.match(evt.request).then((response) => {
-        return response || fetch(evt.request);
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return caches.open(RUNTIME_CACHE).then((cache) => {
+        return fetch(event.request).then((response) => {
+          return cache.put(event.request, response.clone()).then(() => {
+            return response;
+          });
+        });
       });
     })
   );
