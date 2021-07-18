@@ -1,12 +1,10 @@
 const STATIC_CACHE = "static-cache-v1";
-const RUNTIME_CACHE = "runtime-cache";
+const RUNTIME_CACHE = "data-cache-v1";
 
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/service-worker.js",
-  "/assets/js/register-service-worker.js",
   "/assets/css/styles.css",
   "/assets/js/index.js",
   "/assets/js/db.js",
@@ -18,7 +16,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(FILES_TO_CACHE))
+      .then((cache) => {
+        cache.addAll(FILES_TO_CACHE);
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -52,7 +52,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(event.request));
     return;
   }
-  if (event.request.url.includes("/api/transactions")) {
+
+  if (event.request.url.includes("/api/images")) {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then((cache) => {
         return fetch(event.request)
@@ -65,11 +66,13 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
+
       return caches.open(RUNTIME_CACHE).then((cache) => {
         return fetch(event.request).then((response) => {
           return cache.put(event.request, response.clone()).then(() => {
