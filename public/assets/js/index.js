@@ -112,7 +112,6 @@ function sendTransaction(isAdding) {
   populateChart();
   populateTable();
   populateTotal();
-  console.log("transaction inside function", transaction);
   // also send to server
   fetch("/api/transaction", {
     method: "POST",
@@ -123,7 +122,6 @@ function sendTransaction(isAdding) {
     },
   })
     .then((response) => {
-      console.log("transaction inside then", transaction);
       return response.json();
     })
     .then((data) => {
@@ -136,7 +134,6 @@ function sendTransaction(isAdding) {
       }
     })
     .catch((err) => {
-      console.log("transaction inside catch", transaction);
       // fetch failed, so save in indexed db
       saveRecord(transaction);
 
