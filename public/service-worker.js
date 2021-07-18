@@ -5,8 +5,10 @@ const FILES_TO_CACHE = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
+  "/service-worker.js",
   "/assets/css/styles.css",
   "/assets/js/index.js",
+  "/assets/js/register-service-worker.js",
   "/assets/js/db.js",
   "/assets/images/icons/icon-192x192.png",
   "/assets/images/icons/icon-512x512.png",
@@ -14,12 +16,14 @@ const FILES_TO_CACHE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => {
-        cache.addAll(FILES_TO_CACHE);
-      })
-      .then(() => self.skipWaiting())
+    caches.open(RUNTIME_CACHE).then((cache) => {
+      cache.add("/api/transaction");
+    })
+  );
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      cache.addAll(FILES_TO_CACHE);
+    })
   );
 });
 
@@ -53,7 +57,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (event.request.url.includes("/api/images")) {
+  if (event.request.url.includes("/api/transaction")) {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then((cache) => {
         return fetch(event.request)
